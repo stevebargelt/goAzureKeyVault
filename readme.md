@@ -1,4 +1,4 @@
-# Accessing an Azure Key Vault from Go
+# Accessing Secrets in an Azure Key Vault from Go
 
 ## Azure Setup
 
