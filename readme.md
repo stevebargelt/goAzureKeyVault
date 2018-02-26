@@ -140,9 +140,9 @@ az keyvault secret set --vault-name 'goKeyVaultTest1' --name 'Password' --value 
 https://gokeyvaulttest1.vault.azure.net/secrets/UserName/aef49f415a2a4eb0ac5a21155a7cbf24
 https://gokeyvaulttest1.vault.azure.net/secrets/Password/8142a26d3a02425282da3da565f4a952
 
-{              Base URL                }       {  name  }{         version              }
+{---------------Base URL---------------}secrets{--name--}{-----------version------------}
 
-> and yes these IDs have been killed with fire! 
+> and yes these IDs have been killed with fire!
 
 For reasons that will become clear later, we will add the password again.
 
