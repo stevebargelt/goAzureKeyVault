@@ -2,7 +2,7 @@
 
 ## Azure Setup
 
-## Azure CLI 2.x
+### Azure CLI 2.x
 
 I prefer to run my Azure CLI in a docker container:
 
