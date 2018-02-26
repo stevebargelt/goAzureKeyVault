@@ -26,6 +26,8 @@ az login
 
 ### Get Subscription ID and Tenant ID
 
+> NOTE: It might actually get a good idea to `cp env.tpl .env` now, open .env and follow along as we gather IDs and other data for our client app to use.
+
 ```shell
 az account list
 ```
@@ -73,7 +75,7 @@ az group create --name "goKeyVault" --location "centralus"
 
 ### Create a Key Vault
 
-> Note that the name needs to be unique since it will make up part of a URL.
+> Note that the Key Vault name needs to be globally unique since it will make up part of a URI formed as: https://yourKeyVaultName.vault.azure.net/
 
 ```shell
 az keyvault create --name 'goKeyVaultTest1' --resource-group 'goKeyVault' --location 'centralus'
@@ -134,9 +136,10 @@ az keyvault secret set --vault-name 'goKeyVaultTest1' --name 'Password' --value 
 ```
 
 > Once again we will need some information from the resultant JSON for our code a little later on. For now just capture the full id (URL):
-> https://gokeyvaulttest1.vault.azure.net/secrets/UserName/aef49f415a2a4eb0ac5a21155a7cbf24
-> https://gokeyvaulttest1.vault.azure.net/secrets/Password/8142a26d3a02425282da3da565f4a952
-> {              Base URL                }       {  name  }{         version              }
+
+https://gokeyvaulttest1.vault.azure.net/secrets/UserName/aef49f415a2a4eb0ac5a21155a7cbf24
+https://gokeyvaulttest1.vault.azure.net/secrets/Password/8142a26d3a02425282da3da565f4a952
+{              Base URL                }       {  name  }{         version              }
 
 For reasons that will become clear later, we will add the password again...
 
