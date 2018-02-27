@@ -7,7 +7,9 @@ import (
 	"log"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/Azure/azure-sdk-for-go/services/keyvault/2016-10-01/keyvault"
 	"github.com/Azure/go-autorest/autorest"
@@ -39,7 +41,8 @@ func main() {
 	}
 
 	fmt.Println("Getting Key Vault")
-	cli := getKeysClient()
+	cli, err := getKeysClient()
+	onErrorFail(err, "getKeysClient failed")
 
 	username, err := getSecret(&cli, vaultBaseURL, userSecretName, userSecretVersion)
 	onErrorFail(err, "getUsername failed")
@@ -115,39 +118,66 @@ func parseArgs() error {
 		return errors.New(message)
 	}
 
-	oauthConfig, err = adal.NewOAuthConfig(azure.PublicCloud.ActiveDirectoryEndpoint, tenantID)
-
 	return err
 }
 
-func getKeysClient() keyvault.BaseClient {
-	token, _ := getKeyvaultToken()
+func getKeysClient() (keyvault.BaseClient, error) {
+
 	vmClient := keyvault.New()
+	token, err := getKeyvaultToken()
+	if err != nil {
+		return vmClient, err
+	}
 	vmClient.Authorizer = token
-	//vmClient.AddToUserAgent("goAzureKeyVault") //Where does this show?
-	return vmClient
+	return vmClient, nil
+
 }
 
 func getKeyvaultToken() (authorizer autorest.Authorizer, err error) {
-	config, err := adal.NewOAuthConfig(azure.PublicCloud.ActiveDirectoryEndpoint, tenantID)
+
+	oauthConfig, err := adal.NewOAuthConfig(azure.PublicCloud.ActiveDirectoryEndpoint, tenantID)
+	if err != nil {
+		return nil, err
+	}
 	updatedAuthorizeEndpoint, err := url.Parse("https://login.windows.net/" + tenantID + "/oauth2/token")
-	config.AuthorizeEndpoint = *updatedAuthorizeEndpoint
+	oauthConfig.AuthorizeEndpoint = *updatedAuthorizeEndpoint
 	if err != nil {
 		return
 	}
 
-	spt, err := adal.NewServicePrincipalToken(
-		*config,
-		clientID,
-		clientSecret,
-		"https://vault.azure.net")
+	cachePath := filepath.Join("cache", fmt.Sprintf("%s.token.json", clientID))
 
+	rawToken, err := tryLoadCachedToken(cachePath)
 	if err != nil {
-		return authorizer, err
+		return nil, err
 	}
-	authorizer = autorest.NewBearerAuthorizer(spt)
+	var spt *adal.ServicePrincipalToken
+	if rawToken != nil && !rawToken.IsExpired() {
+		defer timeTrack(time.Now(), "From File")
+		spt, err = adal.NewServicePrincipalTokenFromManualToken(*oauthConfig, clientID, "https://vault.azure.net", *rawToken)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		defer timeTrack(time.Now(), "No File")
+		spt, err = adal.NewServicePrincipalToken(*oauthConfig, clientID, clientSecret, "https://vault.azure.net")
+		if err != nil {
+			return nil, err
+		}
+		err := spt.Refresh()
+		if err != nil {
+			log.Printf("Refresh token failed", err)
+		}
+		adRawToken := spt.Token()
+		err = adal.SaveToken(cachePath, 0600, adRawToken)
+		if err != nil {
+			return nil, err
+		}
+		log.Printf("Saved token to cache. path=%q", cachePath)
+	}
 
-	return
+	authorizer = autorest.NewBearerAuthorizer(spt)
+	return authorizer, nil
 }
 
 // LoadEnvVars loads environment variables.
@@ -159,9 +189,35 @@ func LoadEnvVars() error {
 	return nil
 }
 
+func tryLoadCachedToken(cachePath string) (*adal.Token, error) {
+	//log.Printf("Attempting to load token from cache. path=%q", cachePath)
+
+	// Check for file not found so we can suppress the file not found error
+	// LoadToken doesn't discern and returns error either way
+	if _, err := os.Stat(cachePath); err != nil {
+		if os.IsNotExist(err) {
+			log.Printf("Cache path does not exist. Path=%q", cachePath)
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	token, err := adal.LoadToken(cachePath)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to load token from file: %v", err)
+	}
+	//log.Printf("Success: loaded token from cache. path=%q", cachePath)
+	return token, nil
+}
+
 func onErrorFail(err error, message string) {
 	if err != nil {
 		fmt.Printf("%s: %s", message, err)
 		os.Exit(1)
 	}
+}
+
+func timeTrack(start time.Time, name string) {
+	elapsed := time.Since(start)
+	log.Printf("%s took %s", name, elapsed)
 }
