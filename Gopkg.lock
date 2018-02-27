@@ -20,14 +20,32 @@
   version = "v3.1.0"
 
 [[projects]]
+  name = "github.com/sirupsen/logrus"
+  packages = ["."]
+  revision = "d682213848ed68c0a260ca37d6dd5ace8423f5ba"
+  version = "v1.0.4"
+
+[[projects]]
   name = "github.com/subosito/gotenv"
   packages = ["."]
   revision = "009e1f9581dc712aba5682a279dee155ca3eeded"
   version = "v1.1.0"
 
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/crypto"
+  packages = ["ssh/terminal"]
+  revision = "8c653846df49742c4c85ec37e5d9f8d3ba657895"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/sys"
+  packages = ["unix","windows"]
+  revision = "f6cff0780e542efa0c8e864dc8fa522808f6a598"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "1a8f5b48d7521c5b72ca2ce026a5e911358beccf7aab69deb8474a1026d19da2"
+  inputs-digest = "5e5150fe037c1d3cf842b17fe9ea3ebc2d88af80a48f29200cb5efe89c7e0b55"
   solver-name = "gps-cdcl"
   solver-version = 1
