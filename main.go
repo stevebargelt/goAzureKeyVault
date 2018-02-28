@@ -59,7 +59,9 @@ func main() {
 		log.Fatalf("Could not get a Key Vault Client. %v", err)
 	}
 
-	username, err := getSecret(&cli, vaultBaseURL, userSecretName, userSecretVersion)
+	ctx := context.Background()
+
+	username, err := getSecret(ctx, &cli, vaultBaseURL, userSecretName, userSecretVersion)
 	if err != nil {
 		log.Warnf("Error when trying to retrieve secret %s. Error: %v", userSecretName, err.Error())
 	}
@@ -67,7 +69,7 @@ func main() {
 
 	//If we omit the secret version we get the current (latest) secret
 	fmt.Println("--- Password with no version set (current) ---")
-	password, err := getSecret(&cli, vaultBaseURL, passwordSecretName, "")
+	password, err := getSecret(ctx, &cli, vaultBaseURL, passwordSecretName, "")
 	if err != nil {
 		log.Warnf("Error when trying to retrieve secret %s. Error: %v", passwordSecretName, err.Error())
 	}
@@ -75,15 +77,15 @@ func main() {
 
 	//Using the secret version we can access specific versions of the secret (older, etc.)
 	fmt.Printf("--- Password version %s ---\n", passwordSecretVersion)
-	password, err = getSecret(&cli, vaultBaseURL, passwordSecretName, passwordSecretVersion)
+	password, err = getSecret(ctx, &cli, vaultBaseURL, passwordSecretName, passwordSecretVersion)
 	if err != nil {
 		log.Warnf("Error when trying to retrieve secret %s. Error: %v", passwordSecretName, err.Error())
 	}
 	fmt.Printf("  Password Value= %s\n", password)
 }
 
-func getSecret(cli *keyvault.BaseClient, vaultBaseURL string, secretName string, secretVersion string) (string, error) {
-	ctx := context.Background()
+func getSecret(ctx context.Context, cli *keyvault.BaseClient, vaultBaseURL string, secretName string, secretVersion string) (string, error) {
+	defer timeTrack(time.Now(), "getSecret")
 	secretBundle, err := cli.GetSecret(ctx, vaultBaseURL, secretName, secretVersion)
 	if err != nil {
 		return "", err
