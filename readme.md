@@ -226,7 +226,6 @@ Once these changes are saved.
 
 ```shell
 dep ensure
-go build main.go
 go run main.go
 ```
 
